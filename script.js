@@ -14,9 +14,9 @@ const servicesData = [
     { name: 'Установка снегозадержателей', unit: 'м.п.', price: 500, category: 'roof' },
     // Монтажные работы
     { name: 'Монтаж кондиционеров', unit: 'шт.', price: 11000, category: 'mount' },
-    { name: 'Монтаж рекламы', unit: 'шт.', price: 500, category: 'mount' },
+    { name: 'Монтаж рекламы', unit: 'м²', price: 500, category: 'mount' },
     // Прочие услуги
-    { name: 'Демонтажные работы', unit: 'час', price: 300, category: 'other' },
+    { name: 'Демонтажные работы', unit: 'шт.', price: 7000, category: 'other' },
     { name: 'Спил деревьев', unit: 'шт.', price: 15000, category: 'other' }
 ];
 
@@ -116,8 +116,6 @@ function renderServicesTable(category = 'all') {
         `<tr><td>${s.name}</td><td>${s.unit}</td><td>от ${s.price.toLocaleString('ru-RU')} ₽</td></tr>`
     ).join('');
     populateServiceSelects(category);
-    calculatePricePage();
-    calculatePriceUseful();
 }
 
 function populateServiceSelects(category = 'all') {
@@ -156,58 +154,6 @@ document.querySelectorAll('.service-tab-btn').forEach(tab => {
         renderServicesTable(tab.dataset.tab);
     });
 });
-
-// ========== КАЛЬКУЛЯТОР НА СТРАНИЦЕ УСЛУГ ==========
-const serviceSelectPage = document.getElementById('service-select-page');
-const areaInputPage = document.getElementById('area-input-page');
-const heightSelectPage = document.getElementById('height-select-page');
-
-function calculatePricePage() {
-    if (!serviceSelectPage || !areaInputPage || !serviceSelectPage.value) return;
-    const service = pricesMap[serviceSelectPage.value];
-    if (!service) return;
-    const area = parseFloat(areaInputPage.value) || 0;
-    const heightCoeff = heightSelectPage ? parseFloat(heightSelectPage.value) : 1.3;
-    let basePrice = (service.unit === 'час' || service.unit === 'шт.' || service.unit === 'выезд' || service.unit === 'точка') ? service.price : service.price * area;
-    let workPrice = Math.round(basePrice * heightCoeff);
-    if (workPrice < MIN_ORDER) workPrice = MIN_ORDER;
-    const totalPrice = workPrice;
-    const workEl = document.getElementById('work-price-page');
-    const totalEl = document.getElementById('total-price-page');
-    const materialRow = document.getElementById('material-price-row');
-    if (workEl) workEl.textContent = workPrice.toLocaleString('ru-RU');
-    if (totalEl) totalEl.textContent = totalPrice.toLocaleString('ru-RU');
-    if (materialRow) materialRow.style.display = 'none';
-}
-
-if (serviceSelectPage) serviceSelectPage.addEventListener('change', calculatePricePage);
-if (areaInputPage) areaInputPage.addEventListener('input', calculatePricePage);
-if (heightSelectPage) heightSelectPage.addEventListener('change', calculatePricePage);
-
-// ========== КАЛЬКУЛЯТОР НА СТРАНИЦЕ ПОЛЕЗНОЕ ==========
-const serviceSelectUseful = document.getElementById('service-select-useful');
-const areaInputUseful = document.getElementById('area-input-useful');
-const heightSelectUseful = document.getElementById('height-select-useful');
-
-function calculatePriceUseful() {
-    if (!serviceSelectUseful || !areaInputUseful || !serviceSelectUseful.value) return;
-    const service = pricesMap[serviceSelectUseful.value];
-    if (!service) return;
-    const area = parseFloat(areaInputUseful.value) || 0;
-    const heightCoeff = heightSelectUseful ? parseFloat(heightSelectUseful.value) : 1.3;
-    let basePrice = (service.unit === 'час' || service.unit === 'шт.' || service.unit === 'выезд' || service.unit === 'точка') ? service.price : service.price * area;
-    let workPrice = Math.round(basePrice * heightCoeff);
-    if (workPrice < MIN_ORDER) workPrice = MIN_ORDER;
-    const totalPrice = workPrice;
-    const workEl = document.getElementById('work-price-useful');
-    const totalEl = document.getElementById('total-price-useful');
-    if (workEl) workEl.textContent = workPrice.toLocaleString('ru-RU');
-    if (totalEl) totalEl.textContent = totalPrice.toLocaleString('ru-RU');
-}
-
-if (serviceSelectUseful) serviceSelectUseful.addEventListener('change', calculatePriceUseful);
-if (areaInputUseful) areaInputUseful.addEventListener('input', calculatePriceUseful);
-if (heightSelectUseful) heightSelectUseful.addEventListener('change', calculatePriceUseful);
 
 // ========== ПОРТФОЛИО ==========
 const portfolioGrid = document.getElementById('portfolio-grid');
@@ -265,12 +211,35 @@ if (reviewsContainer) {
 }
 
 // ========== ФОРМЫ ==========
-document.querySelectorAll('form').forEach(form => form.addEventListener('submit', (e) => { e.preventDefault(); alert('✅ Спасибо! Ваша заявка отправлена. Мы свяжемся с вами в ближайшее время.'); form.reset(); }));
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (response.ok) {
+                alert('✅ Спасибо! Ваша заявка отправлена. Мы свяжемся с вами в ближайшее время.');
+                form.reset();
+            } else {
+                alert('❌ Произошла ошибка. Пожалуйста, позвоните нам по телефону.');
+            }
+        } catch (error) {
+            alert('❌ Ошибка соединения. Пожалуйста, позвоните нам по телефону.');
+        }
+    });
+});
 
 // ========== КНОПКИ ==========
 const vkBtn = document.querySelector('.vk-button');
 if (vkBtn) vkBtn.href = 'https://vk.com/write-12345678';
-document.querySelectorAll('.btn-callback').forEach(btn => btn.addEventListener('click', () => alert('📞 Пожалуйста, позвоните нам по номеру 8-952-233-91-45 или оставьте заявку на странице Контакты.')));
+document.querySelectorAll('.btn-callback').forEach(btn => btn.addEventListener('click', () => alert('📞 Пожалуйста, позвоните нам: 8-999-730-60-03 Кирилл или 8-952-233-91-45 Иван')));
 
 // ========== ПЛАВНАЯ ПРОКРУТКА ==========
 document.querySelectorAll('a[href^="#"]').forEach(anchor => anchor.addEventListener('click', function(e) { const href = this.getAttribute('href'); if (href === '#' || href === '#about') { const target = document.querySelector('#about') || document.querySelector('.advantages'); if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); } } }));
@@ -281,4 +250,3 @@ function openTabFromUrl() { const params = new URLSearchParams(window.location.s
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 populateServiceSelects('all');
 if (tbody) { renderServicesTable('all'); openTabFromUrl(); }
-setTimeout(() => { calculatePricePage(); calculatePriceUseful(); }, 100);
