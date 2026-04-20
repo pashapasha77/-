@@ -38,7 +38,26 @@
         .regions-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 30px; }
         .region-tag { background: var(--light); padding: 8px 20px; border-radius: 30px; font-size: 14px; color: var(--primary); border: 1px solid #ddd; }
         .region-tag i { color: var(--secondary); margin-right: 8px; }
-        @media (max-width: 768px) { .contacts-grid { grid-template-columns: 1fr; } .page-header h1 { font-size: 32px; } }
+        .form-checkbox { display: flex; align-items: center; margin: 15px 0; }
+        .form-checkbox input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--secondary); }
+        .form-checkbox label { margin-bottom: 0 !important; font-weight: normal !important; cursor: pointer; }
+        .captcha-group { display: flex; align-items: center; gap: 15px; margin: 15px 0; }
+        .captcha-question { background: var(--primary); color: var(--white); padding: 10px 20px; border-radius: 8px; font-size: 20px; font-weight: 700; min-width: 100px; text-align: center; }
+        .captcha-group input { width: 120px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--white); border-radius: var(--border-radius); max-width: 700px; width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .modal-header { padding: 25px 30px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--white); z-index: 10; }
+        .modal-header h2 { font-size: 24px; color: var(--primary); margin: 0; }
+        .modal-close { width: 40px; height: 40px; border-radius: 50%; background: var(--light); border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--gray); transition: all 0.3s; }
+        .modal-close:hover { background: var(--secondary); color: var(--white); }
+        .modal-body { padding: 30px; }
+        .modal-body h3 { color: var(--primary); margin: 25px 0 15px; font-size: 18px; }
+        .modal-body h3:first-of-type { margin-top: 0; }
+        .modal-body p { color: var(--gray); line-height: 1.7; margin-bottom: 15px; font-size: 14px; }
+        .modal-body ul { margin: 10px 0 15px 20px; color: var(--gray); }
+        .modal-body li { margin-bottom: 5px; }
+        @media (max-width: 768px) { .contacts-grid { grid-template-columns: 1fr; } .page-header h1 { font-size: 32px; } .modal-content { max-width: 95%; } .captcha-group { flex-wrap: wrap; } }
     </style>
 </head>
 <body>
@@ -115,7 +134,7 @@
                 </div>
                 <div class="contact-form">
                     <h2>Оставить заявку</h2><p>Опишите задачу, и мы свяжемся с вами для точного расчёта</p>
-                    <form id="contact-form-page" action="https://api.web3forms.com/submit" method="POST">
+                    <form id="contact-form-page" action="https://api.web3forms.com/submit" method="POST" onsubmit="return validateCaptcha()">
                         <input type="hidden" name="access_key" value="3f8d545c-d4f6-426c-aa5b-d2775e66eeb9">
 
                         <div class="form-group">
@@ -138,6 +157,23 @@
                             <label>Сообщение</label>
                             <textarea name="message" class="form-control" placeholder="Опишите задачу, укажите адрес и объём работ..."></textarea>
                         </div>
+
+                        <div class="form-group">
+                            <label>Проверка: сколько будет <span id="captcha-num1">0</span> + <span id="captcha-num2">0</span>?</label>
+                            <div class="captcha-group">
+                                <span class="captcha-question" id="captcha-question">0 + 0 = ?</span>
+                                <input type="number" id="captcha-answer" class="form-control" placeholder="Введите ответ" required>
+                            </div>
+                            <input type="hidden" id="captcha-result" value="0">
+                        </div>
+
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="privacy-agree" name="privacy-agree" required>
+                            <label for="privacy-agree" style="display: inline; margin-left: 8px;">
+                                Я согласен с <a href="#" onclick="openPrivacyModal(); return false;" style="color: var(--secondary);">политикой конфиденциальности</a>
+                            </label>
+                        </div>
+
                         <button type="submit" class="btn btn-primary btn-block">Отправить заявку</button>
                         <p class="form-note">Нажимая кнопку, вы соглашаетесь с обработкой персональных данных</p>
                     </form>
@@ -147,11 +183,68 @@
                 <h2>География работ</h2><p>Работаем в Костроме и по всей Костромской области</p>
                 <div class="map-container"><div id="yandex-map"></div></div>
                 <div class="regions-list">
-                    <span class="region-tag"><i class="fas fa-check-circle"></i> Кострома</span><span class="region-tag"><i class="fas fa-check-circle"></i> Волгореченск</span><span class="region-tag"><i class="fas fa-check-circle"></i> Буй</span><span class="region-tag"><i class="fas fa-check-circle"></i> Шарья</span><span class="region-tag"><i class="fas fa-check-circle"></i> Мантурово</span><span class="region-tag"><i class="fas fa-check-circle"></i> Нерехта</span><span class="region-tag"><i class="fas fa-check-circle"></i> Галич</span><span class="region-tag"><i class="fas fa-check-circle"></i> Ивановская область</span><span class="region-tag"><i class="fas fa-check-circle"></i> Ярославская область</span>
+                    <span class="region-tag"><i class="fas fa-check-circle"></i> Кострома</span>
+                    <span class="region-tag"><i class="fas fa-check-circle"></i> Волгореченск</span>
+                    <span class="region-tag"><i class="fas fa-check-circle"></i> Буй</span>
+                    <span class="region-tag"><i class="fas fa-check-circle"></i> Шарья</span>
+                    <span class="region-tag"><i class="fas fa-check-circle"></i> Мантурово</span>
+                    <span class="region-tag"><i class="fas fa-check-circle"></i> Нерехта</span>
+                    <span class="region-tag"><i class="fas fa-check-circle"></i> Галич</span>
+                    <span class="region-tag"><i class="fas fa-check-circle"></i> Ивановская область</span>
+                    <span class="region-tag"><i class="fas fa-check-circle"></i> Ярославская область</span>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Модальное окно политики конфиденциальности -->
+    <div class="modal" id="privacy-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Политика конфиденциальности</h2>
+                <button class="modal-close" onclick="closePrivacyModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>1. Общие положения</h3>
+                <p>1.1. Настоящая Политика конфиденциальности персональных данных (далее — Политика) разработана в соответствии с требованиями Федерального закона от 27.07.2006 № 152-ФЗ «О персональных данных» и определяет порядок обработки персональных данных и меры по обеспечению безопасности персональных данных, предпринимаемые Индивидуальным предпринимателем <strong>Белов Иван Андреевич</strong> (ИНН <strong>441501715907</strong>, ОГРНИП <strong>324440000014846</strong>), осуществляющим деятельность под коммерческим обозначением «ПромАльп44/37» (далее — Оператор).</p>
+                <p>1.2. Оператор ставит своей важнейшей целью и условием осуществления своей деятельности соблюдение прав и свобод человека и гражданина при обработке его персональных данных, в том числе защиты прав на неприкосновенность частной жизни, личную и семейную тайну.</p>
+                <p>1.3. Настоящая Политика применяется ко всей информации, которую Оператор может получить о посетителях веб-сайта <strong>https://промальп4437.рф</strong>.</p>
+
+                <h3>2. Основные понятия</h3>
+                <p>2.1. Персональные данные — любая информация, относящаяся к прямо или косвенно определенному или определяемому физическому лицу (субъекту персональных данных).</p>
+                <p>2.2. Обработка персональных данных — любое действие (операция) или совокупность действий (операций) с персональными данными.</p>
+                <p>2.3. Оператор — Индивидуальный предприниматель <strong>Белоа Иван Андреевич</strong> (ИНН <strong>441501715907</strong>, ОГРНИП <strong>324440000014846</strong>), осуществляющий деятельность под коммерческим обозначением «ПромАльп44/37», самостоятельно или совместно с другими лицами организующий обработку персональных данных.</p>
+
+                <h3>3. Какие данные мы собираем</h3>
+                <p>3.1. Мы собираем только те персональные данные, которые вы добровольно предоставляете при заполнении формы обратной связи на сайте:</p>
+                <ul><li>Имя;</li><li>Номер телефона;</li><li>Адрес электронной почты (при указании);</li><li>Содержание сообщения.</li></ul>
+                <p>3.2. Также на сайте происходит сбор и обработка обезличенных данных о посетителях (в т.ч. файлов «cookie») с помощью сервисов интернет-статистики.</p>
+
+                <h3>4. Цели обработки персональных данных</h3>
+                <p>4.1. Цель обработки персональных данных Пользователя:</p>
+                <ul><li>Обратная связь с Пользователем по поводу оставленной заявки;</li><li>Расчёт стоимости работ и информирование об услугах компании;</li><li>Направление уведомлений, касающихся предоставляемых услуг.</li></ul>
+
+                <h3>5. Правовые основания обработки</h3>
+                <p>5.1. Оператор обрабатывает персональные данные Пользователя только в случае их заполнения и/или отправки Пользователем самостоятельно через специальные формы, расположенные на сайте. Заполняя соответствующие формы и/или отправляя свои персональные данные Оператору, Пользователь выражает свое согласие с данной Политикой.</p>
+
+                <h3>6. Порядок сбора, хранения и передачи данных</h3>
+                <p>6.1. Безопасность персональных данных, обрабатываемых Оператором, обеспечивается путем реализации правовых, организационных и технических мер, необходимых для выполнения в полном объеме требований действующего законодательства в области защиты персональных данных.</p>
+                <p>6.2. Персональные данные Пользователя никогда, ни при каких условиях не будут переданы третьим лицам, за исключением случаев, связанных с исполнением действующего законодательства.</p>
+                <p>6.3. Срок обработки персональных данных является неограниченным. Пользователь может в любой момент отозвать свое согласие на обработку персональных данных, направив Оператору уведомление посредством электронной почты на адрес Srska1995@mail.ru с пометкой «Отзыв согласия на обработку персональных данных».</p>
+
+                <h3>7. Права Пользователя</h3>
+                <p>7.1. Пользователь имеет право на получение информации, касающейся обработки его персональных данных. Пользователь вправе требовать от Оператора уточнения его персональных данных, их блокирования или уничтожения.</p>
+
+                <h3>8. Заключительные положения</h3>
+                <p>8.1. Оператор вправе вносить изменения в настоящую Политику конфиденциальности без согласия Пользователя. Новая редакция Политики вступает в силу с момента ее размещения на Сайте.</p>
+                <p>8.2. Действующая редакция Политики находится на странице по адресу: <strong>https://промальп4437.рф/contacts.html</strong>.</p>
+
+                <h3>9. Контакты</h3>
+                <p>По всем вопросам, связанным с обработкой персональных данных, вы можете обратиться к Оператору — ИП <strong>Белов Иван Андреевич</strong> (ПромАльп44/37):</p>
+                <ul><li>Телефон: 8-999-730-60-03 (Кирилл), 8-952-233-91-45 (Иван)</li><li>Email: Srska1995@mail.ru</li></ul>
+            </div>
+        </div>
+    </div>
 
     <footer class="footer">
         <div class="container">
@@ -176,11 +269,38 @@
     <a href="https://vk.com/write-12345678" class="vk-button" target="_blank"><i class="fab fa-vk"></i><span>Написать ВКонтакте</span></a>
     <script src="script.js"></script>
     <script>
+        let captchaResult = 0;
+        function generateCaptcha() {
+            const num1 = Math.floor(Math.random() * 10) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            captchaResult = num1 + num2;
+            document.getElementById('captcha-num1').textContent = num1;
+            document.getElementById('captcha-num2').textContent = num2;
+            document.getElementById('captcha-question').textContent = num1 + ' + ' + num2 + ' = ?';
+            document.getElementById('captcha-result').value = captchaResult;
+        }
+        function validateCaptcha() {
+            const answer = parseInt(document.getElementById('captcha-answer').value);
+            if (answer !== captchaResult) {
+                alert('❌ Неверный ответ. Попробуйте ещё раз.');
+                generateCaptcha();
+                document.getElementById('captcha-answer').value = '';
+                return false;
+            }
+            return true;
+        }
+        window.addEventListener('DOMContentLoaded', generateCaptcha);
+
         ymaps.ready(function () {
             var myMap = new ymaps.Map('yandex-map', { center: [57.7679, 40.9269], zoom: 9, controls: ['zoomControl', 'fullscreenControl'] });
             var myPlacemark = new ymaps.Placemark([57.7679, 40.9269], { hintContent: 'ПромАльп44/37', balloonContent: 'Промышленный альпинизм в Костроме и ближайших областях<br>8-999-730-60-03, 8-952-233-91-45' }, { iconLayout: 'default#image', iconImageHref: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@14.0.0/img/apple/64/1f3d4.png', iconImageSize: [40, 40], iconImageOffset: [-20, -40] });
             myMap.geoObjects.add(myPlacemark);
         });
+
+        function openPrivacyModal() { document.getElementById('privacy-modal').classList.add('active'); }
+        function closePrivacyModal() { document.getElementById('privacy-modal').classList.remove('active'); }
+        document.getElementById('privacy-modal').addEventListener('click', function(e) { if (e.target === this) closePrivacyModal(); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closePrivacyModal(); });
     </script>
 </body>
 </html>
